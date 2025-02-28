@@ -1,5 +1,6 @@
 const {
-  convertTimestampToDate
+  convertTimestampToDate,
+  formatTopicDataTopicData
 } = require("../db/seeds/utils");
 
 describe("convertTimestampToDate", () => {
