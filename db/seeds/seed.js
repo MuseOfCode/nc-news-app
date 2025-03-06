@@ -1,8 +1,6 @@
 const db = require("../connection");
 const format = require("pg-format");
-const { convertTimestampToDate } = require("./utils");
-
-
+const { convertTimestampToDate, createArticleLookup } = require("./utils");
 
 const seed = ({ topicData, userData, articleData, commentData }) => {
   return db
@@ -16,10 +14,13 @@ const seed = ({ topicData, userData, articleData, commentData }) => {
     .then(() => createComments())
     .then(() => insertTopics(topicData))
     .then(() => insertUsers(userData))
-    .then(() => insertArticles(articleData));
+    .then(() => insertArticles(articleData))
+    .then(({ rows }) => {
+      const articleLookup = createArticleLookup(rows);
+      return insertComments(commentData, articleLookup);
+    });
+};
 
-
-}
 module.exports = seed;
 
 function createTopics() {
@@ -30,7 +31,6 @@ function createTopics() {
       img_url VARCHAR(1000)
     );
   `);
-
   return db.query(topics)
     .then(() => console.log("Topics table created"))
     .catch((err) => console.error("Error creating topics table:", err));
@@ -44,14 +44,12 @@ function createUsers() {
       avatar_url VARCHAR(1000)
     );
   `);
-
   return db.query(users)
     .then(() => console.log("Users table created!"))
     .catch((err) => console.error("Error creating users table:", err));
 }
 
 function createArticles() {
-
   const articles = (`
     CREATE TABLE IF NOT EXISTS articles (
       article_id SERIAL PRIMARY KEY,
@@ -64,14 +62,12 @@ function createArticles() {
       article_img_url VARCHAR(1000)
     );
   `);
-
   return db.query(articles)
     .then(() => console.log("Articles table created"))
     .catch((err) => console.error("Error creating articles table:", err));
 }
 
 function createComments() {
-
   const comments = (`
     CREATE TABLE IF NOT EXISTS comments (
       comment_id SERIAL PRIMARY KEY,
@@ -82,25 +78,17 @@ function createComments() {
       created_at TIMESTAMP DEFAULT NOW()
     );
   `);
-
   return db.query(comments)
     .then(() => console.log("Comments table created"))
-    .catch((err) => console.error("error creating comments table:", err));
+    .catch((err) => console.error("Error creating comments table:", err));
 }
 
-
 function insertTopics(data) {
-
   const qStr = format(
     `INSERT INTO topics (slug, description, img_url)
     VALUES %L RETURNING *;`,
-    data.map(({ slug, description, img_url }) => [
-      slug,
-      description,
-      img_url,
-    ])
+    data.map(({ slug, description, img_url }) => [slug, description, img_url])
   );
-
   return db.query(qStr);
 }
 
@@ -109,28 +97,39 @@ function insertUsers(data) {
     `INSERT INTO users (username, name, avatar_url)
     VALUES %L RETURNING *;`,
     data.map(({ username, name, avatar_url }) => [username, name, avatar_url])
-  )
-
+  );
   return db.query(qStr);
 }
 
 function insertArticles(data) {
-  const formattedArticles = data.map(convertTimestampToDate)
-
+  // Convert the created_at timestamps to ISO strings.
+  const formattedArticles = data.map(convertTimestampToDate);
   const qStr = format(
     `INSERT INTO articles (title, topic, author, body, created_at, votes, article_img_url)
     VALUES %L RETURNING *;`,
-    formattedArticles.map(({ title, topic, author, body, created_at, votes = 0, article_img_url }) => [
-      title,
-      topic,
-      author,
-      body,
-      created_at,
-      votes,
-      article_img_url
-    ])
+    formattedArticles.map(({ title, topic, author, body, created_at, votes = 0, article_img_url }) => 
+      [title, topic, author, body, created_at, votes, article_img_url]
+    )
   );
+  return db.query(qStr);
+}
 
-  return db.query(qStr)
-   
+function insertComments(data, articleLookup) {
+  // Map the comment data, converting created_at to an ISO string.
+  const formattedComments = data.map(comment => ({
+    article_id: articleLookup[comment.article_title],
+    body: comment.body,
+    votes: comment.votes,
+    author: comment.author,
+    created_at: new Date(comment.created_at).toISOString()
+  }));
+
+  const qStr = format(
+    `INSERT INTO comments (article_id, body, votes, author, created_at)
+     VALUES %L RETURNING *;`,
+    formattedComments.map(({ article_id, body, votes, author, created_at }) => 
+      [article_id, body, votes, author, created_at]
+    )
+  );
+  return db.query(qStr);
 }
