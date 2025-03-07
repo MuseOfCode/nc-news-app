@@ -110,19 +110,21 @@ function insertArticles(data) {
     formattedArticles.map(({ title, topic, author, body, created_at, votes = 0, article_img_url }) => 
       [title, topic, author, body, created_at, votes, article_img_url]
     )
-  );
+  )
   return db.query(qStr);
 }
 
 function insertComments(data, articleLookup) {
-  // Map the comment data, converting created_at to an ISO string.
-  const formattedComments = data.map(comment => ({
-    article_id: articleLookup[comment.article_title],
-    body: comment.body,
-    votes: comment.votes,
-    author: comment.author,
-    created_at: new Date(comment.created_at).toISOString()
-  }));
+  const formattedComments = data.map(comment => {
+    const formattedComment = convertTimestampToDate(comment)
+    return {
+      article_id: articleLookup[comment.article_title],
+      body: formattedComment.body,
+      votes: formattedComment.votes,
+      author: formattedComment.author,
+      created_at: formattedComment.created_at 
+    }
+  });
 
   const qStr = format(
     `INSERT INTO comments (article_id, body, votes, author, created_at)
@@ -131,5 +133,6 @@ function insertComments(data, articleLookup) {
       [article_id, body, votes, author, created_at]
     )
   );
-  return db.query(qStr);
+
+  return db.query(qStr)
 }
