@@ -1,9 +1,12 @@
 const endpointsJson = require("../endpoints.json");
+const app = require("../app");
+const request = require("supertest");
+
 /* Set up your test imports here */
 
 /* Set up your beforeEach & afterAll functions here */
 
-describe.skip("GET /api", () => {
+describe("GET /api", () => {
   test("200: Responds with an object detailing the documentation for each endpoint", () => {
     return request(app)
       .get("/api")
