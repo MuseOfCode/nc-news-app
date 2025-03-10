@@ -23,3 +23,22 @@ describe.only("GET /api", () => {
       });
   });
 });
+describe("GET /api/topics", () => {
+  test.only("Status: 200, Responds with an array of topic objects", () => {
+    return request(app)
+      .get("/api/topics")
+      .expect(200)
+      .then(({ body }) => {
+        const expectedLength = body.topics.length;
+        expect(body.topics.length).toBe(expectedLength);
+        body.topics.forEach((topic) => {
+          expect(topic).toEqual(
+            expect.objectContaining({
+              description: expect.any(String),
+              slug: expect.any(String),
+            })
+          );
+        });
+      });
+  });
+});
