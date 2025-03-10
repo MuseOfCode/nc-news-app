@@ -25,8 +25,6 @@ describe("GET /api/topics", () => {
       .get("/api/topics")
       .expect(200)
       .then(({ body }) => {
-        const expectedLength = body.topics.length;
-        expect(body.topics.length).toBe(expectedLength);
         body.topics.forEach((topic) => {
           expect(topic).toEqual(
             expect.objectContaining({
@@ -37,6 +35,7 @@ describe("GET /api/topics", () => {
         });
       });
   });
+
   test("Status: 404, Responds with a 404 - Not Found error if the endpoint is incorrect", () => {
     return request(app)
       .get("/api/topic")
@@ -47,62 +46,46 @@ describe("GET /api/topics", () => {
   });
 });
 
-describe.skip("GET /api/articles/:articles_id", () => {
-  let minId;
-  let maxId;
-
-  beforeEach(() => {
+describe("GET /api/articles/:article_id", () => {
+  test("Status: 200, Responds with one article object that has the max article_id", () => {
     return request(app)
-      .get("/api/articles")
+      .get(`/api/articles/13`)
       .expect(200)
       .then(({ body }) => {
-        const articleIds = body.articles.map((article) => article.article.id);
-        minId = Math.min(articleIds);
-        maxId = Math.max(articleIds);
+        expect(body.article).toEqual(
+          expect.objectContaining({ article_id: 13 })
+        );
       });
   });
 
-  test("Status:200, Responds with one article object that has the max article_id", () => {
+  test("Status: 200, Responds with one article object that has the min article_id", () => {
     return request(app)
-      .get(`/api/articles/${maxId}`)
+      .get(`/api/articles/1`)
       .expect(200)
       .then(({ body }) => {
-        expect(body.article.length).toBe(1);
-        expect(body.article.article_id(maxId));
-      });
-  });
-
-  test("Status:200, Responds with one article object that has the min article_id", () => {
-    return request(app)
-      .get(`/api/articles/${minId}`)
-      .expect(200)
-      .then(({ body }) => {
-        expect(body.article.length).toBe(1);
-        expect(body.article.article_id(minId));
+        expect(body.article).toEqual(
+          expect.objectContaining({ article_id: 1 })
+        );
       });
   });
 
   test("Status: 200, Responds with one article object based on article_id", () => {
-    console.log(articles.length);
     return request(app)
-      .get("/api/articles/2")
+      .get("/api/articles/4")
       .expect(200)
       .then(({ body }) => {
-        expect(body.article.length).toBeEqualTo(1);
-        body.articles.forEach((article) => {
-          expect(article).toEqual(
-            expect.objectContaining({
-              article_id: 2,
-              author: expect.any(String),
-              title: expect.any(String),
-              body: expect.any(String),
-              topic: expect.any(String),
-              created_at: expect.any(Number),
-              votes: expect.any(Number),
-              article_img_url: expect.any(String),
-            })
-          );
-        });
+        expect(body.article).toEqual(
+          expect.objectContaining({
+            article_id: 4,
+            author: expect.any(String),
+            title: expect.any(String),
+            body: expect.any(String),
+            topic: expect.any(String),
+            created_at: expect.any(String),
+            votes: expect.any(Number),
+            article_img_url: expect.any(String),
+          })
+        );
       });
   });
 });
