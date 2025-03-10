@@ -88,4 +88,22 @@ describe("GET /api/articles/:article_id", () => {
         );
       });
   });
+
+  test("Status: 404, returns 404 - Not Found error", () => {
+    const invalidId = 999;
+    return request(app)
+      .get(`/api/articles/${invalidId}`)
+      .expect(404)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Article not found");
+      });
+  });
+  test("Status: 400, Responds with a 400 - Bad Request", () => {
+    return request(app)
+      .get("/api/articles/lol")
+      .expect(400)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Bad Request");
+      });
+  });
 });
