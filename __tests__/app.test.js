@@ -158,4 +158,12 @@ describe("GET /api/articles", () => {
         expect(body.articles).toBeSortedBy("created_at", { descending: true });
       });
   });
+  test("Status: 404, Responds with a 404 - Not Found error if the endpoint is incorrect", () => {
+    return request(app)
+      .get("/api/article")
+      .expect(404)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Endpoint not found");
+      });
+  });
 });
