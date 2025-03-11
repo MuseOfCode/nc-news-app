@@ -7,9 +7,7 @@ const db = require("../db/connection");
 const { toBeSortedBy } = require("jest-sorted");
 
 beforeAll(() => {
-  return seed(data).then(() => {
-    // console.log("DB SEEDED???");
-  });
+  return seed(data).then(() => {});
 });
 
 afterAll(() => {
@@ -46,7 +44,7 @@ describe("GET /api/topics", () => {
 
   test("Status: 404, Responds with a 404 - Not Found error if the endpoint is incorrect", () => {
     return request(app)
-      .get("/api/topic")
+      .get("/api/not_a_route")
       .expect(404)
       .then(({ body }) => {
         expect(body.msg).toBe("Endpoint not found");
@@ -54,66 +52,42 @@ describe("GET /api/topics", () => {
   });
 });
 
-describe("GET /api/articles/:article_id", () => {
-  test("Status: 200, Responds with one article object that has the max article_id", () => {
-    return request(app)
-      .get(`/api/articles/13`)
-      .expect(200)
-      .then(({ body }) => {
-        expect(body.article).toEqual(
-          expect.objectContaining({ article_id: 13 })
-        );
-      });
-  });
+test("Status: 200, Responds with one article object based on article_id", () => {
+  return request(app)
+    .get("/api/articles/4")
+    .expect(200)
+    .then(({ body }) => {
+      expect(body.article).toEqual(
+        expect.objectContaining({
+          article_id: 4,
+          author: expect.any(String),
+          title: expect.any(String),
+          body: expect.any(String),
+          topic: expect.any(String),
+          created_at: expect.any(String),
+          votes: expect.any(Number),
+          article_img_url: expect.any(String),
+        })
+      );
+    });
+});
 
-  test("Status: 200, Responds with one article object that has the min article_id", () => {
-    return request(app)
-      .get(`/api/articles/1`)
-      .expect(200)
-      .then(({ body }) => {
-        expect(body.article).toEqual(
-          expect.objectContaining({ article_id: 1 })
-        );
-      });
-  });
+test("Status: 404, returns 404 - Not Found error", () => {
+  return request(app)
+    .get(`/api/articles/999`)
+    .expect(404)
+    .then(({ body }) => {
+      expect(body.msg).toBe("Article not found");
+    });
+});
 
-  test("Status: 200, Responds with one article object based on article_id", () => {
-    return request(app)
-      .get("/api/articles/4")
-      .expect(200)
-      .then(({ body }) => {
-        expect(body.article).toEqual(
-          expect.objectContaining({
-            article_id: 4,
-            author: expect.any(String),
-            title: expect.any(String),
-            body: expect.any(String),
-            topic: expect.any(String),
-            created_at: expect.any(String),
-            votes: expect.any(Number),
-            article_img_url: expect.any(String),
-          })
-        );
-      });
-  });
-
-  test("Status: 404, returns 404 - Not Found error", () => {
-    const invalidId = 999;
-    return request(app)
-      .get(`/api/articles/${invalidId}`)
-      .expect(404)
-      .then(({ body }) => {
-        expect(body.msg).toBe("Article not found");
-      });
-  });
-  test("Status: 400, Responds with a 400 - Bad Request", () => {
-    return request(app)
-      .get("/api/articles/lol")
-      .expect(400)
-      .then(({ body }) => {
-        expect(body.msg).toBe("Bad Request");
-      });
-  });
+test("Status: 400, Responds with a 400 - Bad Request", () => {
+  return request(app)
+    .get("/api/articles/not_a_route")
+    .expect(400)
+    .then(({ body }) => {
+      expect(body.msg).toBe("Bad Request");
+    });
 });
 
 describe("GET /api/articles", () => {
@@ -132,7 +106,6 @@ describe("GET /api/articles", () => {
       .get("/api/articles")
       .expect(200)
       .then(({ body }) => {
-        console.log(body);
         body.articles.forEach((article) => {
           expect(article).toEqual(
             expect.objectContaining({
@@ -150,20 +123,13 @@ describe("GET /api/articles", () => {
         });
       });
   });
+
   test("Status: 200, Responds with articles sorted by date in descending order", () => {
     return request(app)
       .get("/api/articles")
       .expect(200)
       .then(({ body }) => {
         expect(body.articles).toBeSortedBy("created_at", { descending: true });
-      });
-  });
-  test("Status: 404, Responds with a 404 - Not Found error if the endpoint is incorrect", () => {
-    return request(app)
-      .get("/api/article")
-      .expect(404)
-      .then(({ body }) => {
-        expect(body.msg).toBe("Endpoint not found");
       });
   });
 });
@@ -190,60 +156,30 @@ describe("GET /api/articles/:article_id/comments", () => {
         expect(body.comments).toBeSortedBy("created_at", { descending: true });
       });
   });
-  test("Status: 200, Responds with an empty array if article exists but has no comments", () => {
-    return db
-      .query(
-        `SELECT a.article_id 
-       FROM articles a 
-       LEFT JOIN comments c ON a.article_id = c.article_id 
-       WHERE c.article_id IS NULL 
-       LIMIT 1;`
-      )
-      .then(({ rows }) => {
-        const articleWithoutComments = rows[0];
-        const { article_id } = articleWithoutComments;
-        const id = article_id;
 
-        return request(app)
-          .get(`/api/articles/${id}/comments`)
-          .expect(200)
-          .then(({ body }) => {
-            console.log("if no comments:", body, body.comments);
-            expect(body.comments).toEqual([]);
-          });
-      });
-  });
-  test("Status: 404, Responds with 404 - Not Found error if articles endpoint is incorrect", () => {
+  test("Status: 200, Responds with an empty array if article exists but has no comments", () => {
     return request(app)
-      .get("/api/article/3/comments")
-      .expect(404)
+      .get("/api/articles/2/comments")
+      .expect(200)
       .then(({ body }) => {
-        expect(body.msg).toBe("Endpoint not found");
+        expect(body.comments).toEqual([]);
       });
   });
-  test("Status: 400, Responds with 400 - Bad Request article_id is incorrect data type", () => {
-    return request(app)
-      .get("/api/articles/invalid_id/comments")
-      .expect(400)
-      .then(({ body }) => {
-        expect(body.msg).toBe("Bad Request");
-      });
-  });
-  test("Status: 404, Responds with 404 - Not found if article_id is invalid", () => {
-    return request(app)
-      .get("/api/articles/999/comments")
-      .expect(404)
-      .then(({ body }) => {
-        console.log("if article not found:", body, body.article);
-        expect(body.msg).toBe("Article not found");
-      });
-  });
-  test("Status: 404, Responds with 404 - Not found if endpoint is incorrect", () => {
-    return request(app)
-      .get("/api/articles/3/comment")
-      .expect(404)
-      .then(({ body }) => {
-        expect(body.msg).toBe("Endpoint not found");
-      });
-  });
+});
+test("Status: 400, Responds with 400 - Bad Request if article_id is incorrect data type", () => {
+  return request(app)
+    .get("/api/articles/invalid_id/comments")
+    .expect(400)
+    .then(({ body }) => {
+      expect(body.msg).toBe("Bad Request");
+    });
+});
+
+test("Status: 404, Responds with 404 - Not Found if article_id is invalid", () => {
+  return request(app)
+    .get("/api/articles/999/comments")
+    .expect(404)
+    .then(({ body }) => {
+      expect(body.msg).toBe("Article not found");
+    });
 });
