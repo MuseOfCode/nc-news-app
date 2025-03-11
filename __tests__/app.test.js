@@ -4,9 +4,15 @@ const request = require("supertest");
 const data = require("../db/data/test-data");
 const seed = require("../db/seeds/seed");
 const db = require("../db/connection");
+const { toBeSortedBy } = require("jest-sorted");
 
-beforeAll(() => seed(data));
-afterAll(() => db.end());
+beforeAll(() => {
+  return seed(data);
+});
+
+afterAll(() => {
+  return db.end();
+});
 
 describe("GET /api", () => {
   test("200: Responds with an object detailing the documentation for each endpoint", () => {
@@ -104,6 +110,50 @@ describe("GET /api/articles/:article_id", () => {
       .expect(400)
       .then(({ body }) => {
         expect(body.msg).toBe("Bad Request");
+      });
+  });
+});
+
+describe.skip("GET /api/articles", () => {
+  test("Status: 200, Responds with an articles array of article objects", () => {
+    return request(app)
+      .get("/api/articles")
+      .expect(200)
+      .then(({ body }) => {
+        expect(Array.isArray(body.articles)).toBe(true);
+        expect(body.articles.length).toBeGreaterThan(0);
+      });
+  });
+
+  test("Status: 200, Responds with each article having correct properties", () => {
+    return request(app)
+      .get("/api/articles")
+      .expect(200)
+      .then(({ body }) => {
+        body.articles.forEach((article) => {
+          expect(article).toEqual(
+            expect.objectContaining({
+              article_id: expect.any(Number),
+              author: expect.any(String),
+              title: expect.any(String),
+              body: expect.any(String),
+              topic: expect.any(String),
+              created_at: expect.any(String),
+              votes: expect.any(Number),
+              article_img_url: expect.any(String),
+              comment_count: expect.any(Number),
+            })
+          );
+          expecr(article).no.toHaveProperty("body");
+        });
+      });
+  });
+  test("Status: 200, Responds with articles sorted by date in descending order", () => {
+    return request(app)
+      .get("/api/articles")
+      .expect(200)
+      .then(({ body }) => {
+        expect(body.articles).toBeSortedBy("created_at", { desceding: true });
       });
   });
 });
