@@ -8,7 +8,7 @@ const { toBeSortedBy } = require("jest-sorted");
 
 beforeAll(() => {
   return seed(data).then(() => {
-    console.log("DB SEEDED???");
+    // console.log("DB SEEDED???");
   });
 });
 
@@ -161,6 +161,86 @@ describe("GET /api/articles", () => {
   test("Status: 404, Responds with a 404 - Not Found error if the endpoint is incorrect", () => {
     return request(app)
       .get("/api/article")
+      .expect(404)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Endpoint not found");
+      });
+  });
+});
+
+describe("GET /api/articles/:article_id/comments", () => {
+  test("Status: 200, responds with array of comment objects", () => {
+    return request(app)
+      .get("/api/articles/3/comments")
+      .expect(200)
+      .then(({ body }) => {
+        expect(Array.isArray(body.comments)).toBe(true);
+        body.comments.forEach((comment) => {
+          expect(comment).toEqual(
+            expect.objectContaining({
+              comment_id: expect.any(Number),
+              votes: expect.any(Number),
+              created_at: expect.any(String),
+              author: expect.any(String),
+              body: expect.any(String),
+              article_id: 3,
+            })
+          );
+        });
+        expect(body.comments).toBeSortedBy("created_at", { descending: true });
+      });
+  });
+  test("Status: 200, Responds with an empty array if article exists but has no comments", () => {
+    return db
+      .query(
+        `SELECT a.article_id 
+       FROM articles a 
+       LEFT JOIN comments c ON a.article_id = c.article_id 
+       WHERE c.article_id IS NULL 
+       LIMIT 1;`
+      )
+      .then(({ rows }) => {
+        const articleWithoutComments = rows[0];
+        const { article_id } = articleWithoutComments;
+        const id = article_id;
+
+        return request(app)
+          .get(`/api/articles/${id}/comments`)
+          .expect(200)
+          .then(({ body }) => {
+            console.log("if no comments:", body, body.comments);
+            expect(body.comments).toEqual([]);
+          });
+      });
+  });
+  test("Status: 404, Responds with 404 - Not Found error if articles endpoint is incorrect", () => {
+    return request(app)
+      .get("/api/article/3/comments")
+      .expect(404)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Endpoint not found");
+      });
+  });
+  test("Status: 400, Responds with 400 - Bad Request article_id is incorrect data type", () => {
+    return request(app)
+      .get("/api/articles/invalid_id/comments")
+      .expect(400)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Bad Request");
+      });
+  });
+  test("Status: 404, Responds with 404 - Not found if article_id is invalid", () => {
+    return request(app)
+      .get("/api/articles/999/comments")
+      .expect(404)
+      .then(({ body }) => {
+        console.log("if article not found:", body, body.article);
+        expect(body.msg).toBe("Article not found");
+      });
+  });
+  test("Status: 404, Responds with 404 - Not found if endpoint is incorrect", () => {
+    return request(app)
+      .get("/api/articles/3/comment")
       .expect(404)
       .then(({ body }) => {
         expect(body.msg).toBe("Endpoint not found");
