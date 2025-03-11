@@ -1,6 +1,6 @@
 const db = require("../db/connection");
 
-exports.fetchArticles = (req, res) => {
+exports.fetchArticles = () => {
   return db
     .query(
       `SELECT 
