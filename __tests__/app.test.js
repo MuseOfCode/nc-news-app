@@ -7,7 +7,9 @@ const db = require("../db/connection");
 const { toBeSortedBy } = require("jest-sorted");
 
 beforeAll(() => {
-  return seed(data);
+  return seed(data).then(() => {
+    console.log("DB SEEDED???");
+  });
 });
 
 afterAll(() => {
@@ -114,7 +116,7 @@ describe("GET /api/articles/:article_id", () => {
   });
 });
 
-describe.skip("GET /api/articles", () => {
+describe("GET /api/articles", () => {
   test("Status: 200, Responds with an articles array of article objects", () => {
     return request(app)
       .get("/api/articles")
@@ -130,13 +132,13 @@ describe.skip("GET /api/articles", () => {
       .get("/api/articles")
       .expect(200)
       .then(({ body }) => {
+        console.log(body);
         body.articles.forEach((article) => {
           expect(article).toEqual(
             expect.objectContaining({
               article_id: expect.any(Number),
               author: expect.any(String),
               title: expect.any(String),
-              body: expect.any(String),
               topic: expect.any(String),
               created_at: expect.any(String),
               votes: expect.any(Number),
@@ -144,7 +146,7 @@ describe.skip("GET /api/articles", () => {
               comment_count: expect.any(Number),
             })
           );
-          expecr(article).no.toHaveProperty("body");
+          expect(article).not.toHaveProperty("body");
         });
       });
   });
@@ -153,7 +155,7 @@ describe.skip("GET /api/articles", () => {
       .get("/api/articles")
       .expect(200)
       .then(({ body }) => {
-        expect(body.articles).toBeSortedBy("created_at", { desceding: true });
+        expect(body.articles).toBeSortedBy("created_at", { descending: true });
       });
   });
 });
