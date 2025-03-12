@@ -66,6 +66,28 @@
           "article_id": 3
         }
       ]
+    },
+    "POST /api/articles/:article_id/comments": {
+      "description": "Posts a new comment for a given article ID.",
+      "queries": [],
+      "requestBody": {
+        "username": "string (required)",
+        "body": "string (required)"
+      },
+      "exampleRequestBody": {
+        "username": "lurker",
+        "body": "Code is fun... until it isn’t. Then it's just debugging."
+      },
+      "exampleResponse": {
+        "comment": {
+          "comment_id": 1,
+          "article_id": 3,
+          "author": "lurker",
+          "body": "Code is fun... until it isn’t. Then it's just debugging.",
+          "votes": 0,
+          "created_at": "2025-03-12T15:00:00.000Z"
+        }
+      }
     }
   }
 }
