@@ -9,13 +9,13 @@ const { getArticlesWithoutComments } = require("../db/queries/test.queries");
 
 beforeAll(() => {
   return seed(data).then(() => {
-    console.log("done");
+    console.log("Seeding complete");
   });
 });
 
 afterAll(() => {
   return db.end().then(() => {
-    console.log("end");
+    console.log("Database connection closed");
   });
 });
 
