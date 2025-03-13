@@ -316,3 +316,120 @@ describe("POST /api/articles/:article_id/comments", () => {
     });
   });
 });
+
+describe("PATCH /api/articles/:article_id", () => {
+  test.each([
+    ["increments article votes", { inc_votes: 1 }, 3],
+    ["decrements article votes", { inc_votes: -1 }, 2],
+  ])("Status 200, Successfully %s", (_, requestBody, expectedResult) => {
+    return request(app)
+      .patch("/api/articles/2")
+      .send(requestBody)
+      .expect(200)
+      .then(({ body }) => {
+        expect(body.article[0].votes).toBe(expectedResult);
+      });
+  });
+  test("Status: 200, Updates the correct article based on article_id", () => {
+    return request(app)
+      .patch("/api/articles/5")
+      .send({ inc_votes: 1 })
+      .expect(200)
+      .then(({ body }) => {
+        expect(body.article[0].article_id).toBe(5);
+        expect(body.article[0].votes).toBe(1);
+      });
+  });
+  test("Status: 200, Responds with updated article with correct properties", () => {
+    return request(app)
+      .patch("/api/articles/3")
+      .send({ inc_votes: 1 })
+      .expect(200)
+      .then(({ body }) => {
+        expect(body.article[0]).toMatchObject({
+          article_id: expect.any(Number),
+          title: expect.any(String),
+          author: expect.any(String),
+          topic: expect.any(String),
+          body: expect.any(String),
+          created_at: expect.any(String),
+          votes: expect.any(Number),
+          article_img_url: expect.any(String),
+        });
+      });
+  });
+  test.each([
+    { article_id: 1, inc_votes: -100, expectedVotes: 0 },
+    { article_id: 7, inc_votes: 100, expectedVotes: 100 },
+  ])(
+    "Status: 200, Handles large vote changes (inc_votes: $inc_votes)",
+    ({ article_id, inc_votes, expectedVotes }) => {
+      return request(app)
+        .patch(`/api/articles/${article_id}`)
+        .send({ inc_votes })
+        .expect(200)
+        .then(({ body }) => {
+          expect(body.article[0].votes).toBe(expectedVotes);
+        });
+    }
+  );
+  test("Status: 400, Responds with error 'Votes cannot go below 0' when the vote count goes below 0", () => {
+    return request(app)
+      .patch("/api/articles/8")
+      .send({ inc_votes: -10 })
+      .expect(400)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Votes cannot go below 0");
+      });
+  });
+  test.each([
+    ["inc_votes is missing from request body", {}, "inc_votes is required"],
+    ["inc_votes is null", { inc_votes: null }, "inc_votes must be a number"],
+    [
+      "inc_votes is not a number",
+      { inc_votes: "string" },
+      "inc_votes must be a number",
+    ],
+  ])(
+    "Status: 400, Responds with appropriate error message when %s",
+    (_, requestBody, expectedMsg) => {
+      return request(app)
+        .patch("/api/articles/1")
+        .send(requestBody)
+        .expect(400)
+        .then(({ body }) => {
+          expect(body.msg).toBe(expectedMsg);
+        });
+    }
+  );
+  test.each([
+    {
+      inc_votes: 101,
+      expectedMsg: "inc_votes exceeds the maximum allowed value of 100",
+    },
+    {
+      inc_votes: -101,
+      expectedMsg: "inc_votes exceeds the maximum allowed value of 100",
+    },
+  ])(
+    "Status: 400, Responds with an error message when inc_votes is out of range (inc_votes: $inc_votes)",
+    ({ inc_votes, expectedMsg }) => {
+      return request(app)
+        .patch("/api/articles/11")
+        .send({ inc_votes })
+        .expect(400)
+        .then(({ body }) => {
+          expect(body.msg).toBe(expectedMsg);
+        });
+    }
+  );
+  test("Status: 404, Responds with 404 - 'Article not found' if article does not exist when updating votes", () => {
+    return request(app)
+      .patch("/api/articles/999")
+      .send({ inc_votes: 5 })
+      .expect(404)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Article not found");
+      });
+  });
+});
