@@ -498,7 +498,7 @@ describe("GET /api/users", () => {
         });
       });
   });
-  test.only("Status: 200, Responds with an empty array if no users exists", () => {
+  test("Status: 200, Responds with an empty array if no users exists", () => {
     deleteAllUsers().then(() => {
       return request(app)
         .get("/api/users")
@@ -507,12 +507,5 @@ describe("GET /api/users", () => {
           expect(body.users).toEqual([]);
         });
     });
-    // return request(app).get("/api/users").expect(200);
-    // .then(({ body }) => {
-    //   deleteAllUsers().then(() => {
-    //     console.log(body);
-    //     expect(body.users).toEqual([]);
-    //   });
-    // });
   });
 });
