@@ -13,6 +13,8 @@ const {
   deleteComment,
 } = require("./controllers/comments.controller");
 
+const { getAllUsers } = require("./controllers/users.controller");
+
 app.use(express.json());
 
 app.get("/api", getEndpoints);
@@ -30,6 +32,8 @@ app.post("/api/articles/:article_id/comments", postComment);
 app.patch("/api/articles/:article_id", updateArticleVotes);
 
 app.delete("/api/comments/:comment_id", deleteComment);
+
+app.get("/api/users", getAllUsers);
 
 app.all("/*", (req, res, next) => {
   res.status(404).send({ msg: "Endpoint not found" });
