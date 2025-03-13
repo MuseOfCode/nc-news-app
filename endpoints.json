@@ -109,6 +109,13 @@
           "article_img_url": "https://images.pexels.com/photos/158651/news-newsletter-newspaper-information-158651.jpeg?w=700&h=700"
         }
       }
+    },
+    "DELETE /api/comments/:comment_id": {
+      "description": "Deletes a comment by its ID. If the comment exists, it is removed and the response status is 204 (No Content). If the comment does not exist, responds with a 404 error.",
+      "queries": [],
+      "exampleResponse": {
+        "status": 204
+      }
     }
   }
 }
