@@ -13,3 +13,11 @@ exports.getArticlesWithoutComments = () => {
       return rows;
     });
 };
+
+exports.countUsers = () => {
+  return db.query("SELECT COUNT(*) AS total_users FROM users;");
+};
+
+exports.deleteAllUsers = () => {
+  return db.query("DELETE FROM users");
+};
