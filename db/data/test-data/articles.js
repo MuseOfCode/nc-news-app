@@ -15,7 +15,7 @@ module.exports = [
     author: "icellusedkars",
     body: "Call me Mitchell. Some years ago..",
     created_at: 1602828180000,
-    votes: 0,
+    votes: 2,
     article_img_url:
       "https://images.pexels.com/photos/158651/news-newsletter-newspaper-information-158651.jpeg?w=700&h=700",
   },
@@ -75,7 +75,7 @@ module.exports = [
     author: "icellusedkars",
     body: "Archaeologists have uncovered a gigantic statue from the dawn of humanity, and it has an uncanny resemblance to Mitch. Surely I am not the only person who can see this?!",
     created_at: 1587089280000,
-    votes: 0,
+    votes: 9,
     article_img_url:
       "https://images.pexels.com/photos/158651/news-newsletter-newspaper-information-158651.jpeg?w=700&h=700",
   },
