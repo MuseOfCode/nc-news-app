@@ -5,7 +5,11 @@ const data = require("../db/data/test-data");
 const seed = require("../db/seeds/seed");
 const db = require("../db/connection");
 const { toBeSortedBy } = require("jest-sorted");
-const { getArticlesWithoutComments } = require("../db/queries/test.queries");
+const {
+  getArticlesWithoutComments,
+  countUsers,
+  deleteAllUsers,
+} = require("../db/queries/test.queries");
 
 beforeAll(() => {
   return seed(data).then(() => {
@@ -469,5 +473,46 @@ describe("DELETE /api/comments/:comment_id", () => {
             expect(body.msg).toBe("Comment not found");
           });
       });
+  });
+});
+
+describe("GET /api/users", () => {
+  test("Status: 200, Responds with an array of correct total of users objects", () => {
+    return request(app).get("/api/users").expect(200);
+  });
+  test("Status: 200, Responds with each object containing the correct properties", () => {
+    return request(app)
+      .get("/api/users")
+      .expect(200)
+      .then(({ body }) => {
+        expect(Array.isArray(body.users)).toBe(true);
+        countUsers().then((total) => expext(body.users.length).toBe(total));
+        body.users.forEach((user) => {
+          expect(user).toEqual(
+            expect.objectContaining({
+              username: expect.any(String),
+              name: expect.any(String),
+              avatar_url: expect.any(String),
+            })
+          );
+        });
+      });
+  });
+  test.only("Status: 200, Responds with an empty array if no users exists", () => {
+    deleteAllUsers().then(() => {
+      return request(app)
+        .get("/api/users")
+        .expect(200)
+        .then(({ body }) => {
+          expect(body.users).toEqual([]);
+        });
+    });
+    // return request(app).get("/api/users").expect(200);
+    // .then(({ body }) => {
+    //   deleteAllUsers().then(() => {
+    //     console.log(body);
+    //     expect(body.users).toEqual([]);
+    //   });
+    // });
   });
 });
