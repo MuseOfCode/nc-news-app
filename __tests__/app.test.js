@@ -317,7 +317,7 @@ describe("POST /api/articles/:article_id/comments", () => {
   });
 });
 
-describe.only("PATCH /api/articles/:article_id", () => {
+describe("PATCH /api/articles/:article_id", () => {
   test.each([
     ["increments article votes", { inc_votes: 1 }, 3],
     ["decrements article votes", { inc_votes: -1 }, 2],
@@ -373,15 +373,6 @@ describe.only("PATCH /api/articles/:article_id", () => {
         });
     }
   );
-  // test("Status: 200, Does not alter votes if inc_votes is 0", () => {
-  //   return request(app)
-  //     .patch("/api/articles/4")
-  //     .send({ inc_votes: 0 })
-  //     .expect(200)
-  //     .then(({ body }) => {
-  //       expect(body.article[0].votes).toBe(0);
-  //     });
-  // });
   test("Status: 400, Responds with error 'Votes cannot go below 0' when the vote count goes below 0", () => {
     return request(app)
       .patch("/api/articles/8")

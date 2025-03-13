@@ -40,7 +40,6 @@ app.use((err, req, res, next) => {
 });
 
 app.use((err, req, res, next) => {
-  console.log("err:", err);
   if (err.code === "22P02") {
     return res.status(400).send({ msg: "Bad Request" });
   }

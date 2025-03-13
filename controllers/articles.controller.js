@@ -32,7 +32,6 @@ exports.updateArticleVotes = (req, res, next) => {
       return updateVotesInArticle(article_id, inc_votes);
     })
     .then((article) => {
-      console.log(article);
       res.status(200).send({ article: article });
     })
     .catch(next);
