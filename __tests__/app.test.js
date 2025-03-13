@@ -433,3 +433,41 @@ describe("PATCH /api/articles/:article_id", () => {
       });
   });
 });
+
+describe("DELETE /api/comments/:comment_id", () => {
+  test("Status: 204, Successfully deletes a comment", () => {
+    return request(app).delete("/api/comments/1").expect(204);
+  });
+
+  test("Status: 404, Responds with error if comment not found", () => {
+    return request(app)
+      .delete("/api/comments/999")
+      .expect(404)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Comment not found");
+      });
+  });
+
+  test("Status: 400, Responds with 404 - Bad Request error if invalid comment ID format", () => {
+    return request(app)
+      .delete("/api/comments/invalid_id")
+      .expect(400)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Bad Request");
+      });
+  });
+
+  test("Status: 204, Successfully deletes a comment and returns 404 when deleting again", () => {
+    return request(app)
+      .delete("/api/comments/2")
+      .expect(204)
+      .then(() => {
+        return request(app)
+          .delete("/api/comments/2")
+          .expect(404)
+          .then(({ body }) => {
+            expect(body.msg).toBe("Comment not found");
+          });
+      });
+  });
+});
