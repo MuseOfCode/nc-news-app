@@ -13,7 +13,7 @@
     "description": "serves an array of all articles",
     "queries": [
       "author",
-      "topic",
+      "topic - filters articles by topic (optional)",
       "sort_by (default: created_at)",
       "order (default: desc, valid options: asc, desc)"
     ],
