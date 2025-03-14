@@ -3,15 +3,28 @@ const {
   fetchArticles,
   fetchArticleById,
   updateVotesInArticle,
+  validateTopic,
 } = require("../models/articles.model");
 
 exports.getArticles = (req, res, next) => {
-  const { sort_by, order } = req.query;
-  fetchArticles({ sort_by, order })
-    .then((articles) => {
-      res.status(200).send({ articles });
-    })
-    .catch(next);
+  const { sort_by, order, topic } = req.query;
+
+  if (topic) {
+    validateTopic(topic)
+      .then(() => {
+        return fetchArticles({ sort_by, order, topic });
+      })
+      .then((articles) => {
+        res.status(200).send({ articles: articles });
+      })
+      .catch(next);
+  } else {
+    fetchArticles({ sort_by, order })
+      .then((articles) => {
+        res.status(200).send({ articles: articles });
+      })
+      .catch(next);
+  }
 };
 
 exports.getArticleById = (req, res, next) => {
