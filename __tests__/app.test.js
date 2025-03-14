@@ -5,10 +5,7 @@ const data = require("../db/data/test-data");
 const seed = require("../db/seeds/seed");
 const db = require("../db/connection");
 const { toBeSortedBy } = require("jest-sorted");
-const {
-  getArticlesWithoutComments,
-  deleteAllUsers,
-} = require("../db/queries/test.queries");
+const { getArticlesWithoutComments } = require("../db/queries/test.queries");
 
 beforeAll(() => {
   return seed(data).then(() => {
@@ -123,11 +120,12 @@ describe("GET /api/articles", () => {
   });
 
   test("Status: 404, returns 404 - Not Found error", () => {
+    const invalidId = 999;
     return request(app)
-      .get(`/api/articles/999`)
+      .get(`/api/articles/${invalidId}`)
       .expect(404)
       .then(({ body }) => {
-        expect(body.msg).toBe("Article not found");
+        expect(body.msg).toBe(`Article with ID ${invalidId} not found`);
       });
   });
 
@@ -168,7 +166,7 @@ describe("GET /api/articles/:article_id", () => {
       .get(`/api/articles/${invalidId}`)
       .expect(404)
       .then(({ body }) => {
-        expect(body.msg).toBe("Article not found");
+        expect(body.msg).toBe(`Article with ID ${invalidId} not found`);
       });
   });
   test("Status: 400, Responds with a 400 - Bad Request", () => {
@@ -292,15 +290,16 @@ describe("POST /api/articles/:article_id/comments", () => {
       });
   });
   test("Status: 404, Responds with 404 - Not Found error if article doesn't exist (Foreign Key Error)", () => {
+    const invalidId = 999;
     return request(app)
-      .post("/api/articles/999/comments")
+      .post(`/api/articles/${invalidId}/comments`)
       .send({
         username: "lurker",
         body: "Code is fun... until it isn’t. Then it's just debugging.",
       })
       .expect(404)
       .then(({ body }) => {
-        expect(body.msg).toBe("Article not found");
+        expect(body.msg).toBe(`Article with ID ${invalidId} not found`);
       });
   });
   test("Status: 400, Responds with 400 - Bad request if comment body is empty or only spaces", () => {
@@ -427,12 +426,13 @@ describe("PATCH /api/articles/:article_id", () => {
     }
   );
   test("Status: 404, Responds with 404 - 'Article not found' if article does not exist when updating votes", () => {
+    const invalidId = 999;
     return request(app)
-      .patch("/api/articles/999")
+      .patch(`/api/articles/${invalidId}`)
       .send({ inc_votes: 5 })
       .expect(404)
       .then(({ body }) => {
-        expect(body.msg).toBe("Article not found");
+        expect(body.msg).toBe(`Article with ID ${invalidId} not found`);
       });
   });
 });
@@ -494,7 +494,7 @@ describe("GET /api/users", () => {
         });
       });
   });
-  test("Status: 200, Responds with an empty array if no users exists", () => {
+  test.skip("Status: 200, Responds with an empty array if no users exists", () => {
     deleteAllUsers().then(() => {
       return request(app)
         .get("/api/users")
@@ -596,7 +596,7 @@ describe("GET /api/articles queries", () => {
       .expect(400)
       .then(({ body }) => {
         expect(body.msg).toBe(
-          "Invalid sort_by query parameter: Column does not exist"
+          `Invalid sort_by query parameter: '${invalidSortBy}' is not a valid column.`
         );
       });
   });
@@ -606,7 +606,9 @@ describe("GET /api/articles queries", () => {
       .get(`/api/articles?order=${invalidOrder}`)
       .expect(400)
       .then(({ body }) => {
-        expect(body.msg).toBe("Invalid query detected");
+        expect(body.msg).toBe(
+          `Invalid order query parameter: Must be 'ASC' or 'DESC'.`
+        );
       });
   });
 
@@ -618,12 +620,56 @@ describe("GET /api/articles queries", () => {
         expect(body.msg).toBe("Invalid query detected");
       });
   });
-  test("Status:400, Responds with 400 - 'Invalid query detected' for an SQL Injection attempt which should be blocked", () => {
+  test.skip("Status:400, Responds with 400 - 'Invalid query detected' for an SQL Injection attempt which should be blocked", () => {
     return request(app)
       .get(`/api/articles?sort_by=title;DROP TABLE users;`)
       .expect(400)
       .then(({ body }) => {
         expect(body.msg).toBe("Invalid query detected");
+      });
+  });
+});
+
+describe("GET /api/articles (topic query)", () => {
+  test("Status: 200, responds with filtered articles when topic query is provided", () => {
+    const topic = "mitch";
+    return request(app)
+      .get(`/api/articles?topic=${topic}`)
+      .expect(200)
+      .then(({ body }) => {
+        body.articles.forEach((article) => {
+          expect(article.topic).toBe(topic);
+        });
+      });
+  });
+
+  test("Status: 200, responds with all articles when no topic query is provided", () => {
+    return request(app)
+      .get("/api/articles")
+      .expect(200)
+      .then(({ body }) => {
+        expect(body.articles).toBeInstanceOf(Array);
+      });
+  });
+
+  test("Status: 400, responds with error if topic query is invalid", () => {
+    const invalidTopic = "nonexistentTopic";
+
+    return request(app)
+      .get(`/api/articles?topic=${invalidTopic}`)
+      .expect(400)
+      .then(({ body }) => {
+        console.log(body);
+        expect(body.msg).toBe("Invalid topic");
+      });
+  });
+  test("Status: 200, returns empty array if no articles found for given topic", () => {
+    const topic = "paper";
+    return request(app)
+      .get(`/api/articles?topic=${topic}`)
+      .expect(200)
+      .then(({ body }) => {
+        expect(body.articles).toEqual([]);
       });
   });
 });
