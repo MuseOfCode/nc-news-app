@@ -49,6 +49,12 @@ app.use((err, req, res, next) => {
 app.use((err, req, res, next) => {
   if (err.code === "22P02") {
     return res.status(400).send({ msg: "Bad Request" });
+  } else if (err.code === "42703") {
+    return res
+      .status(400)
+      .send({ msg: "Invalid sort_by query parameter: Column does not exist" });
+  } else if ((err.code = "24601")) {
+    return res.status(400).send({ msg: "Invalid query detected" });
   }
   next(err);
 });

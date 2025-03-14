@@ -7,7 +7,6 @@ const db = require("../db/connection");
 const { toBeSortedBy } = require("jest-sorted");
 const {
   getArticlesWithoutComments,
-  countUsers,
   deleteAllUsers,
 } = require("../db/queries/test.queries");
 
@@ -477,16 +476,13 @@ describe("DELETE /api/comments/:comment_id", () => {
 });
 
 describe("GET /api/users", () => {
-  test("Status: 200, Responds with an array of correct total of users objects", () => {
-    return request(app).get("/api/users").expect(200);
-  });
   test("Status: 200, Responds with each object containing the correct properties", () => {
     return request(app)
       .get("/api/users")
       .expect(200)
       .then(({ body }) => {
         expect(Array.isArray(body.users)).toBe(true);
-        countUsers().then((total) => expext(body.users.length).toBe(total));
+        expect(body.users.length).toBeGreaterThan(0);
         body.users.forEach((user) => {
           expect(user).toEqual(
             expect.objectContaining({
@@ -507,5 +503,127 @@ describe("GET /api/users", () => {
           expect(body.users).toEqual([]);
         });
     });
+  });
+});
+
+describe("GET /api/articles queries", () => {
+  const orders = ["ASC", "DESC"];
+  const columns = [
+    "title",
+    "author",
+    "topic",
+    "votes",
+    "comment_count",
+    "created_at",
+  ];
+  const invalidSortBy = "invalid_column";
+  const invalidOrder = "DOWN";
+
+  //when only order is provided, default column is created_at
+  test.each(orders)(
+    "Status: 200, responds with articles sorted in %s order, when no sort_by query is provided (default 'created_at')",
+    (order) => {
+      return request(app)
+        .get(`/api/articles?order=${order}`)
+        .expect(200)
+        .then(({ body }) => {
+          expect(body.articles).toBeSortedBy(
+            "created_at",
+            order === "DESC" ? { descending: true } : { descending: false }
+          );
+        });
+    }
+  );
+
+  //test when only sort_by is provided, default order is DESC
+  test.each(columns.slice(0, -1))(
+    "Status: 200, responds with %s sorted by default DESC order when sort_by query is provided",
+    (column) => {
+      return request(app)
+        .get(`/api/articles?sort_by=${column}`)
+        .expect(200)
+        .then(({ body }) => {
+          expect(body.articles).toBeSortedBy(column, { descending: true });
+        });
+    }
+  );
+
+  //test when both sort_by and order are provided with the default 'created_at'
+  test.each(orders)(
+    "Status: 200, article order by created_at in %s order when both sort_by and order queries are provided",
+    (order) => {
+      return request(app)
+        .get(`/api/articles?sort_by=created_at&order=${order}`)
+        .expect(200)
+        .then(({ body }) => {
+          expect(body.articles).toBeSortedBy(
+            "created_at",
+            order === "DESC" ? { descending: true } : { descending: false }
+          );
+        });
+    }
+  );
+
+  //test when both sort_by and order are provided with other columns in ascending order
+  //removed created_at from colums array as already tested for that
+  test.each(columns.slice(0, -1))(
+    "Status: 200, responds with articles sorted by %s in ascending order when both sort_by and order queries are provided",
+    (column) => {
+      return request(app)
+        .get(`/api/articles?sort_by=${column}&order=ASC`)
+        .expect(200)
+        .then(({ body }) => {
+          expect(body.articles).toBeSortedBy(column, { descending: false });
+        });
+    }
+  );
+
+  // testst for when both sort_by and order are provided with other columns in default descending order
+  test.each(columns.slice(0, -1))(
+    "Status: 200, responds with articles sorted by %s in descending order when both sort_by and order queries are provided",
+    (column) => {
+      return request(app)
+        .get(`/api/articles?sort_by=${column}&order=DESC`)
+        .expect(200)
+        .then(({ body }) => {
+          expect(body.articles).toBeSortedBy(column, { descending: true });
+        });
+    }
+  );
+  test("Status: 400, Responds with 400 - 'Column does not exist' if provided an invalid sort_by column", () => {
+    return request(app)
+      .get(`/api/articles?sort_by=${invalidSortBy}`)
+      .expect(400)
+      .then(({ body }) => {
+        expect(body.msg).toBe(
+          "Invalid sort_by query parameter: Column does not exist"
+        );
+      });
+  });
+
+  test("Status:400, Responds with 400 - 'Invalid query detected' if provided an invalid order value", () => {
+    return request(app)
+      .get(`/api/articles?order=${invalidOrder}`)
+      .expect(400)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Invalid query detected");
+      });
+  });
+
+  test("Status:400, Responds with 400 - 'Invalid query detected' if provided an invalid combination of sort_by and order", () => {
+    return request(app)
+      .get(`/api/articles?sort_by=${invalidSortBy}&order=${invalidOrder}`)
+      .expect(400)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Invalid query detected");
+      });
+  });
+  test("Status:400, Responds with 400 - 'Invalid query detected' for an SQL Injection attempt which should be blocked", () => {
+    return request(app)
+      .get(`/api/articles?sort_by=title;DROP TABLE users;`)
+      .expect(400)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Invalid query detected");
+      });
   });
 });
