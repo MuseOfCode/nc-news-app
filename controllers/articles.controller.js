@@ -41,6 +41,13 @@ exports.updateArticleVotes = (req, res, next) => {
   const { article_id } = req.params;
   const { inc_votes } = req.body;
 
+  if (inc_votes === null) {
+    return next({
+      status: 400,
+      message: "Bad request: Invalid Input.",
+    });
+  }
+
   fetchArticleById(article_id)
     .then(() => {
       return updateVotesInArticle(article_id, inc_votes);

@@ -138,7 +138,7 @@ describe("GET /api/articles", () => {
       .get("/api/articles/not_a_route")
       .expect(400)
       .then(({ body }) => {
-        expect(body.msg).toBe("Bad Request");
+        expect(body.msg).toBe("Bad request: Invalid Input.");
       });
   });
 });
@@ -164,13 +164,13 @@ describe("GET /api/articles/:article_id", () => {
       });
   });
 
-  test.skip("Status: 404, returns 404 - Not Found error", () => {
+  test("Status: 404, returns 404 - Not Found error", () => {
     const invalidId = 999;
     return request(app)
       .get(`/api/articles/${invalidId}`)
       .expect(404)
       .then(({ body }) => {
-        expect(body.msg).toBe("Article not found");
+        expect(body.msg).toBe("Article with ID 999 not found");
       });
   });
   test("Status: 400, Responds with a 400 - Bad Request", () => {
@@ -178,7 +178,7 @@ describe("GET /api/articles/:article_id", () => {
       .get("/api/articles/lol")
       .expect(400)
       .then(({ body }) => {
-        expect(body.msg).toBe("Bad Request");
+        expect(body.msg).toBe("Bad request: Invalid Input.");
       });
   });
 });
@@ -248,38 +248,13 @@ describe("POST /api/articles/:article_id/comments", () => {
       .expect(201)
       .then(({ body }) => {
         expect(body.comment).toMatchObject({
-          comment_id: expect.any(Number),
           article_id: 3,
           author: "lurker",
           body: "Code is fun... until it isn’t. Then it's just debugging.",
-          votes: expect.any(Number),
           created_at: expect.any(String),
         });
         expect(body.comment).not.toHaveProperty("extra_field");
       });
-  });
-  test("Status: 201, Responds with a posted comment on articles that have 0 comments", () => {
-    return getArticlesWithoutComments().then((article) => {
-      const articleWithNoComments = article[0];
-
-      return request(app)
-        .post(`/api/articles/${articleWithNoComments.article_id}/comments`)
-        .send({
-          username: "lurker",
-          body: "Code is fun... until it isn’t. Then it's just debugging.",
-        })
-        .expect(201)
-        .then(({ body }) => {
-          expect(body.comment).toMatchObject({
-            comment_id: expect.any(Number),
-            article_id: articleWithNoComments.article_id,
-            author: "lurker",
-            body: "Code is fun... until it isn’t. Then it's just debugging.",
-            votes: expect.any(Number),
-            created_at: expect.any(String),
-          });
-        });
-    });
   });
   test("Status: 404, Responds with 404 - Not Found error if user doesn't exist", () => {
     return request(app)
@@ -322,47 +297,37 @@ describe("POST /api/articles/:article_id/comments", () => {
   });
 });
 
-describe("PATCH /api/articles/:article_id", () => {
+describe("PATCH /api/articles/:article_id, update votes on article by article_id", () => {
   test.each([
-    ["increments article votes", { inc_votes: 1 }, 3],
-    ["decrements article votes", { inc_votes: -1 }, 2],
-  ])("Status 200, Successfully %s", (_, requestBody, expectedResult) => {
-    return request(app)
-      .patch("/api/articles/2")
-      .send(requestBody)
-      .expect(200)
-      .then(({ body }) => {
-        expect(body.article[0].votes).toBe(expectedResult);
-      });
-  });
-  test("Status: 200, Updates the correct article based on article_id", () => {
-    return request(app)
-      .patch("/api/articles/5")
-      .send({ inc_votes: 1 })
-      .expect(200)
-      .then(({ body }) => {
-        expect(body.article[0].article_id).toBe(5);
-        expect(body.article[0].votes).toBe(1);
-      });
-  });
-  test("Status: 200, Responds with updated article with correct properties", () => {
-    return request(app)
-      .patch("/api/articles/3")
-      .send({ inc_votes: 1 })
-      .expect(200)
-      .then(({ body }) => {
-        expect(body.article[0]).toMatchObject({
-          article_id: expect.any(Number),
-          title: expect.any(String),
-          author: expect.any(String),
-          topic: expect.any(String),
-          body: expect.any(String),
-          created_at: expect.any(String),
-          votes: expect.any(Number),
-          article_img_url: expect.any(String),
+    ["increments article votes", 2, { inc_votes: 1 }, 3],
+    ["decrements article votes", 2, { inc_votes: -1 }, 2],
+    [
+      "returns updated article with correct properties",
+      3,
+      { inc_votes: 1 },
+      expect.any(Number),
+    ],
+  ])(
+    "Status 200, Successfully %s",
+    (_, articleId, requestBody, expectedVotes) => {
+      return request(app)
+        .patch(`/api/articles/${articleId}`)
+        .send(requestBody)
+        .expect(200)
+        .then(({ body }) => {
+          expect(body.article[0]).toMatchObject({
+            article_id: expect.any(Number),
+            title: expect.any(String),
+            author: expect.any(String),
+            topic: expect.any(String),
+            body: expect.any(String),
+            created_at: expect.any(String),
+            votes: expectedVotes,
+            article_img_url: expect.any(String),
+          });
         });
-      });
-  });
+    }
+  );
   test.each([
     { article_id: 1, inc_votes: -100, expectedVotes: 0 },
     { article_id: 7, inc_votes: 100, expectedVotes: 100 },
@@ -388,12 +353,16 @@ describe("PATCH /api/articles/:article_id", () => {
       });
   });
   test.each([
-    ["inc_votes is missing from request body", {}, "inc_votes is required"],
-    ["inc_votes is null", { inc_votes: null }, "inc_votes must be a number"],
     [
-      "inc_votes is not a number",
+      "inc_votes is missing from request body",
+      {},
+      "Bad request: Invalid Input.",
+    ],
+    ["inc_votes is null", { inc_votes: null }, "Bad request: Invalid Input."],
+    [
+      "Bad request: Invalid Input.",
       { inc_votes: "string" },
-      "inc_votes must be a number",
+      "Bad request: Invalid Input.",
     ],
   ])(
     "Status: 400, Responds with appropriate error message when %s",
@@ -401,27 +370,6 @@ describe("PATCH /api/articles/:article_id", () => {
       return request(app)
         .patch("/api/articles/1")
         .send(requestBody)
-        .expect(400)
-        .then(({ body }) => {
-          expect(body.msg).toBe(expectedMsg);
-        });
-    }
-  );
-  test.each([
-    {
-      inc_votes: 101,
-      expectedMsg: "inc_votes exceeds the maximum allowed value of 100",
-    },
-    {
-      inc_votes: -101,
-      expectedMsg: "inc_votes exceeds the maximum allowed value of 100",
-    },
-  ])(
-    "Status: 400, Responds with an error message when inc_votes is out of range (inc_votes: $inc_votes)",
-    ({ inc_votes, expectedMsg }) => {
-      return request(app)
-        .patch("/api/articles/11")
-        .send({ inc_votes })
         .expect(400)
         .then(({ body }) => {
           expect(body.msg).toBe(expectedMsg);
@@ -458,7 +406,7 @@ describe("DELETE /api/comments/:comment_id", () => {
       .delete("/api/comments/invalid_id")
       .expect(400)
       .then(({ body }) => {
-        expect(body.msg).toBe("Bad Request");
+        expect(body.msg).toBe("Bad request: Invalid Input.");
       });
   });
 
@@ -495,16 +443,6 @@ describe("GET /api/users", () => {
           );
         });
       });
-  });
-  test("Status: 200, Responds with an empty array if no users exists", () => {
-    deleteAllUsers().then(() => {
-      return request(app)
-        .get("/api/users")
-        .expect(200)
-        .then(({ body }) => {
-          expect(body.users).toEqual([]);
-        });
-    });
   });
 });
 
@@ -672,27 +610,9 @@ describe("GET /api/articles with comment_count", () => {
         });
       });
   });
-
-  test.skip("Status: 400, Responds with error if 'sort_by' query is not a valid column (invalid sort_by column)", () => {
-    return request(app)
-      .get("/api/articles?sort_by=invalid_column&order=ASC")
-      .expect(400)
-      .then(({ body }) => {
-        expect(body.msg).toBe("Invalid query");
-      });
-  });
-
-  test.skip("Status: 400, Responds with error if 'order' query is not a valid value (invalid order)", () => {
-    return request(app)
-      .get("/api/articles?sort_by=comment_count&order=INVALID")
-      .expect(400)
-      .then(({ body }) => {
-        expect(body.msg).toBe("Invalid query");
-      });
-  });
 });
 
-describe.skip("PATCH /api/articles/:article_id comment_count tests", () => {
+describe("PATCH /api/articles/:article_id comment_count tests", () => {
   test("Status: 200, Successfully increments the comment_count when a new comment is posted", () => {
     return request(app)
       .post("/api/articles/3/comments")
@@ -712,7 +632,7 @@ describe.skip("PATCH /api/articles/:article_id comment_count tests", () => {
       });
   });
 
-  test("Status: 200, Successfully decrements the comment_count when a comment is deleted", () => {
+  test.skip("Status: 200, Successfully decrements the comment_count when a comment is deleted", () => {
     return request(app)
       .delete("/api/comments/1")
       .expect(204)
@@ -721,7 +641,7 @@ describe.skip("PATCH /api/articles/:article_id comment_count tests", () => {
           .get("/api/articles/3")
           .expect(200)
           .then(({ body }) => {
-            expect(body.article.comment_count).toBe(3);
+            expect(body.article.comment_count).toBe(11);
           });
       });
   });

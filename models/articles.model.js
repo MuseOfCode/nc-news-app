@@ -63,14 +63,9 @@ exports.fetchArticles = ({
     ORDER BY ${sort_by} ${order.toUpperCase()}
   `;
 
-  return db
-    .query(queryStr, queryParams)
-    .then(({ rows }) => {
-      return rows;
-    })
-    .catch((err) => {
-      throw err;
-    });
+  return db.query(queryStr, queryParams).then(({ rows }) => {
+    return rows;
+  });
 };
 
 exports.fetchArticleById = (article_id) => {
@@ -104,29 +99,7 @@ exports.fetchArticleById = (article_id) => {
 
 exports.updateVotesInArticle = (article_id, inc_votes) => {
   const newVote = inc_votes;
-  const maxVotesAllowed = 100;
   const minVotesAllowed = 0;
-
-  if (newVote === undefined) {
-    return Promise.reject({
-      status: 400,
-      msg: "inc_votes is required",
-    });
-  }
-
-  if (newVote === null || isNaN(newVote)) {
-    return Promise.reject({
-      status: 400,
-      msg: "inc_votes must be a number",
-    });
-  }
-
-  if (Math.abs(newVote) > maxVotesAllowed) {
-    return Promise.reject({
-      status: 400,
-      msg: `inc_votes exceeds the maximum allowed value of ${maxVotesAllowed}`,
-    });
-  }
 
   return db
     .query("SELECT * FROM articles WHERE article_id = $1", [article_id])
