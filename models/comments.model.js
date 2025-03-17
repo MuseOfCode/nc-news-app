@@ -1,6 +1,5 @@
 const db = require("../db/connection");
 const { fetchArticleById } = require("./articles.model");
-const { deleteComment } = require("../controllers/comments.controller");
 
 exports.fetchCommentsByArticleId = (article_id) => {
   return db
