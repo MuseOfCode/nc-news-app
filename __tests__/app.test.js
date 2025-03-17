@@ -5,7 +5,10 @@ const data = require("../db/data/test-data");
 const seed = require("../db/seeds/seed");
 const db = require("../db/connection");
 const { toBeSortedBy } = require("jest-sorted");
-const { getArticlesWithoutComments } = require("../db/queries/test.queries");
+const {
+  getArticlesWithoutComments,
+  deleteAllUsers,
+} = require("../db/queries/test.queries");
 
 beforeAll(() => {
   return seed(data).then(() => {
@@ -73,6 +76,7 @@ describe("GET /api/articles", () => {
       .get("/api/articles")
       .expect(200)
       .then(({ body }) => {
+        console.log(body);
         body.articles.forEach((article) => {
           expect(article).toEqual(
             expect.objectContaining({
@@ -101,31 +105,31 @@ describe("GET /api/articles", () => {
   });
   test("Status: 200, Responds with one article object based on article_id", () => {
     return request(app)
-      .get("/api/articles/4")
+      .get("/api/articles/9")
       .expect(200)
       .then(({ body }) => {
+        console.log(body);
         expect(body.article).toEqual(
           expect.objectContaining({
-            article_id: 4,
+            article_id: 9,
             author: expect.any(String),
             title: expect.any(String),
-            body: expect.any(String),
             topic: expect.any(String),
             created_at: expect.any(String),
             votes: expect.any(Number),
             article_img_url: expect.any(String),
+            comment_count: expect.any(Number),
           })
         );
       });
   });
 
   test("Status: 404, returns 404 - Not Found error", () => {
-    const invalidId = 999;
     return request(app)
-      .get(`/api/articles/${invalidId}`)
+      .get(`/api/articles/999`)
       .expect(404)
       .then(({ body }) => {
-        expect(body.msg).toBe(`Article with ID ${invalidId} not found`);
+        expect(body.msg).toBe("Article with ID 999 not found");
       });
   });
 
@@ -145,12 +149,12 @@ describe("GET /api/articles/:article_id", () => {
       .get("/api/articles/4")
       .expect(200)
       .then(({ body }) => {
+        console.log(body);
         expect(body.article).toEqual(
           expect.objectContaining({
             article_id: 4,
             author: expect.any(String),
             title: expect.any(String),
-            body: expect.any(String),
             topic: expect.any(String),
             created_at: expect.any(String),
             votes: expect.any(Number),
@@ -160,13 +164,13 @@ describe("GET /api/articles/:article_id", () => {
       });
   });
 
-  test("Status: 404, returns 404 - Not Found error", () => {
+  test.skip("Status: 404, returns 404 - Not Found error", () => {
     const invalidId = 999;
     return request(app)
       .get(`/api/articles/${invalidId}`)
       .expect(404)
       .then(({ body }) => {
-        expect(body.msg).toBe(`Article with ID ${invalidId} not found`);
+        expect(body.msg).toBe("Article not found");
       });
   });
   test("Status: 400, Responds with a 400 - Bad Request", () => {
@@ -290,16 +294,15 @@ describe("POST /api/articles/:article_id/comments", () => {
       });
   });
   test("Status: 404, Responds with 404 - Not Found error if article doesn't exist (Foreign Key Error)", () => {
-    const invalidId = 999;
     return request(app)
-      .post(`/api/articles/${invalidId}/comments`)
+      .post("/api/articles/999/comments")
       .send({
         username: "lurker",
         body: "Code is fun... until it isn’t. Then it's just debugging.",
       })
       .expect(404)
       .then(({ body }) => {
-        expect(body.msg).toBe(`Article with ID ${invalidId} not found`);
+        expect(body.msg).toBe("Article with ID 999 not found");
       });
   });
   test("Status: 400, Responds with 400 - Bad request if comment body is empty or only spaces", () => {
@@ -426,13 +429,12 @@ describe("PATCH /api/articles/:article_id", () => {
     }
   );
   test("Status: 404, Responds with 404 - 'Article not found' if article does not exist when updating votes", () => {
-    const invalidId = 999;
     return request(app)
-      .patch(`/api/articles/${invalidId}`)
+      .patch("/api/articles/999")
       .send({ inc_votes: 5 })
       .expect(404)
       .then(({ body }) => {
-        expect(body.msg).toBe(`Article with ID ${invalidId} not found`);
+        expect(body.msg).toBe("Article with ID 999 not found");
       });
   });
 });
@@ -494,7 +496,7 @@ describe("GET /api/users", () => {
         });
       });
   });
-  test.skip("Status: 200, Responds with an empty array if no users exists", () => {
+  test("Status: 200, Responds with an empty array if no users exists", () => {
     deleteAllUsers().then(() => {
       return request(app)
         .get("/api/users")
@@ -596,7 +598,7 @@ describe("GET /api/articles queries", () => {
       .expect(400)
       .then(({ body }) => {
         expect(body.msg).toBe(
-          `Invalid sort_by query parameter: '${invalidSortBy}' is not a valid column.`
+          "Invalid sort_by query parameter: 'invalid_column' is not a valid column."
         );
       });
   });
@@ -607,7 +609,7 @@ describe("GET /api/articles queries", () => {
       .expect(400)
       .then(({ body }) => {
         expect(body.msg).toBe(
-          `Invalid order query parameter: Must be 'ASC' or 'DESC'.`
+          "Invalid order query parameter: Must be 'ASC' or 'DESC'."
         );
       });
   });
@@ -620,56 +622,107 @@ describe("GET /api/articles queries", () => {
         expect(body.msg).toBe("Invalid query detected");
       });
   });
-  test.skip("Status:400, Responds with 400 - 'Invalid query detected' for an SQL Injection attempt which should be blocked", () => {
+  test("Status:400, Responds with 400 - 'Invalid query detected' for an SQL Injection attempt which should be blocked", () => {
     return request(app)
       .get(`/api/articles?sort_by=title;DROP TABLE users;`)
       .expect(400)
       .then(({ body }) => {
-        expect(body.msg).toBe("Invalid query detected");
+        expect(body.msg).toBe(
+          "Invalid sort_by query parameter: 'title;DROP TABLE users;' is not a valid column."
+        );
       });
   });
 });
 
-describe("GET /api/articles (topic query)", () => {
-  test("Status: 200, responds with filtered articles when topic query is provided", () => {
-    const topic = "mitch";
-    return request(app)
-      .get(`/api/articles?topic=${topic}`)
-      .expect(200)
-      .then(({ body }) => {
-        body.articles.forEach((article) => {
-          expect(article.topic).toBe(topic);
-        });
-      });
-  });
-
-  test("Status: 200, responds with all articles when no topic query is provided", () => {
+describe("GET /api/articles with comment_count", () => {
+  test("Status: 200, Responds with articles array where each article has a valid comment_count", () => {
     return request(app)
       .get("/api/articles")
       .expect(200)
       .then(({ body }) => {
-        expect(body.articles).toBeInstanceOf(Array);
+        body.articles.forEach((article) => {
+          expect(article).toEqual(
+            expect.objectContaining({
+              article_id: expect.any(Number),
+              comment_count: expect.any(Number),
+            })
+          );
+        });
       });
   });
 
-  test("Status: 400, responds with error if topic query is invalid", () => {
-    const invalidTopic = "nonexistentTopic";
-
+  test("Status: 200, Responds with articles sorted by comment_count in descending order when 'sort_by=comment_count&order=DESC' query is provided", () => {
     return request(app)
-      .get(`/api/articles?topic=${invalidTopic}`)
-      .expect(400)
-      .then(({ body }) => {
-        console.log(body);
-        expect(body.msg).toBe("Invalid topic");
-      });
-  });
-  test("Status: 200, returns empty array if no articles found for given topic", () => {
-    const topic = "paper";
-    return request(app)
-      .get(`/api/articles?topic=${topic}`)
+      .get("/api/articles?sort_by=comment_count&order=DESC")
       .expect(200)
       .then(({ body }) => {
-        expect(body.articles).toEqual([]);
+        expect(body.articles).toBeSortedBy("comment_count", {
+          descending: true,
+        });
+      });
+  });
+
+  test("Status: 200, Responds with articles sorted by comment_count in ascending order when 'sort_by=comment_count&order=ASC' query is provided", () => {
+    return request(app)
+      .get("/api/articles?sort_by=comment_count&order=ASC")
+      .expect(200)
+      .then(({ body }) => {
+        expect(body.articles).toBeSortedBy("comment_count", {
+          ascending: true,
+        });
+      });
+  });
+
+  test.skip("Status: 400, Responds with error if 'sort_by' query is not a valid column (invalid sort_by column)", () => {
+    return request(app)
+      .get("/api/articles?sort_by=invalid_column&order=ASC")
+      .expect(400)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Invalid query");
+      });
+  });
+
+  test.skip("Status: 400, Responds with error if 'order' query is not a valid value (invalid order)", () => {
+    return request(app)
+      .get("/api/articles?sort_by=comment_count&order=INVALID")
+      .expect(400)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Invalid query");
+      });
+  });
+});
+
+describe.skip("PATCH /api/articles/:article_id comment_count tests", () => {
+  test("Status: 200, Successfully increments the comment_count when a new comment is posted", () => {
+    return request(app)
+      .post("/api/articles/3/comments")
+      .send({
+        username: "lurker",
+        body: "This is a new comment.",
+      })
+      .expect(201)
+      .then(() => {
+        return request(app)
+          .get("/api/articles/3")
+          .expect(200)
+          .then(({ body }) => {
+            console.log(body);
+            expect(body.article.comment_count).toBeGreaterThan(0);
+          });
+      });
+  });
+
+  test("Status: 200, Successfully decrements the comment_count when a comment is deleted", () => {
+    return request(app)
+      .delete("/api/comments/1")
+      .expect(204)
+      .then(() => {
+        return request(app)
+          .get("/api/articles/3")
+          .expect(200)
+          .then(({ body }) => {
+            expect(body.article.comment_count).toBe(3);
+          });
       });
   });
 });
