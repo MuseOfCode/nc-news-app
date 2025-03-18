@@ -71,69 +71,69 @@
           "article_id": 3
         }
       ]
+    }
+  },
+  "POST /api/articles/:article_id/comments": {
+    "description": "Posts a new comment for a given article ID.",
+    "queries": [],
+    "requestBody": {
+      "username": "string (required)",
+      "body": "string (required)"
     },
-    "POST /api/articles/:article_id/comments": {
-      "description": "Posts a new comment for a given article ID.",
-      "queries": [],
-      "requestBody": {
-        "username": "string (required)",
-        "body": "string (required)"
-      },
-      "exampleRequestBody": {
-        "username": "lurker",
-        "body": "Code is fun... until it isn’t. Then it's just debugging."
-      },
-      "exampleResponse": {
-        "comment": {
-          "comment_id": 1,
-          "article_id": 3,
-          "author": "lurker",
-          "body": "Code is fun... until it isn’t. Then it's just debugging.",
-          "votes": 0,
-          "created_at": "2025-03-12T15:00:00.000Z"
+    "exampleRequestBody": {
+      "username": "lurker",
+      "body": "Code is fun... until it isn’t. Then it's just debugging."
+    },
+    "exampleResponse": {
+      "comment": {
+        "comment_id": 1,
+        "article_id": 3,
+        "author": "lurker",
+        "body": "Code is fun... until it isn’t. Then it's just debugging.",
+        "votes": 0,
+        "created_at": "2025-03-12T15:00:00.000Z"
+      }
+    }
+  },
+  "PATCH /api/articles/:article_id": {
+    "description": "Updates the number of votes for a given article ID.",
+    "queries": [],
+    "requestBody": {
+      "inc_votes": "Number (required)"
+    },
+    "exampleRequestBody": {
+      "inc_votes": 1
+    },
+    "exampleResponse": {
+      "article": {
+        "title": "Another article about Mitch",
+        "topic": "mitch",
+        "author": "butter_bridge",
+        "body": "There will never be enough articles about Mitch!",
+        "created_at": 1602419040000,
+        "votes": 1,
+        "article_img_url": "https://images.pexels.com/photos/158651/news-newsletter-newspaper-information-158651.jpeg?w=700&h=700"
+      }
+    }
+  },
+  "DELETE /api/comments/:comment_id": {
+    "description": "Deletes a comment by its ID. If the comment exists, it is removed and the response status is 204 (No Content). If the comment does not exist, responds with a 404 error.",
+    "queries": [],
+    "exampleResponse": {
+      "status": 204
+    }
+  },
+  "GET /api/users": {
+    "description": "serves an array of all users",
+    "queries": [],
+    "exampleResponse": {
+      "users": [
+        {
+          "username": "rogersop",
+          "name": "paul",
+          "avatar_url": "https://avatars2.githubusercontent.com/u/24394918?s=400&v=4"
         }
-      }
-    },
-    "PATCH /api/articles/:article_id": {
-      "description": "Updates the number of votes for a given article ID.",
-      "queries": [],
-      "requestBody": {
-        "inc_votes": "Number (required)"
-      },
-      "exampleRequestBody": {
-        "inc_votes": 1
-      },
-      "exampleResponse": {
-        "article": {
-          "title": "Another article about Mitch",
-          "topic": "mitch",
-          "author": "butter_bridge",
-          "body": "There will never be enough articles about Mitch!",
-          "created_at": 1602419040000,
-          "votes": 1,
-          "article_img_url": "https://images.pexels.com/photos/158651/news-newsletter-newspaper-information-158651.jpeg?w=700&h=700"
-        }
-      }
-    },
-    "DELETE /api/comments/:comment_id": {
-      "description": "Deletes a comment by its ID. If the comment exists, it is removed and the response status is 204 (No Content). If the comment does not exist, responds with a 404 error.",
-      "queries": [],
-      "exampleResponse": {
-        "status": 204
-      }
-    },
-    "GET /api/users": {
-      "description": "serves an array of all users",
-      "queries": [],
-      "exampleResponse": {
-        "users": [
-          {
-            "username": "rogersop",
-            "name": "paul",
-            "avatar_url": "https://avatars2.githubusercontent.com/u/24394918?s=400&v=4"
-          }
-        ]
-      }
+      ]
     }
   }
 }
