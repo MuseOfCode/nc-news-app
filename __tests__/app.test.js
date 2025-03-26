@@ -646,3 +646,30 @@ describe("PATCH /api/articles/:article_id comment_count tests", () => {
       });
   });
 });
+
+describe("GET /api/users/:username - Get user by username", () => {
+  test("Status 200: responds with the correct user object when username exists", () => {
+    return request(app)
+      .get("/api/users/butter_bridge")
+      .expect(200)
+      .then(({ body }) => {
+        expect(body.user).toEqual(
+          expect.objectContaining({
+            username: "butter_bridge",
+            name: "jonny",
+            avatar_url:
+              "https://www.healthytherapies.com/wp-content/uploads/2016/06/Lime3.jpg",
+          })
+        );
+      });
+  });
+
+  test("Status 404: responds with an error message when user does not exist", () => {
+    return request(app)
+      .get("/api/users/nonexistantusername")
+      .expect(404)
+      .then(({ body }) => {
+        expect(body.msg).toBe("User not found");
+      });
+  });
+});
