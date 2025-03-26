@@ -1,47 +1,102 @@
-# NC News Seeding
+# NC News API
 
-## Setting Up Environment Variables
+## Hosted Version
 
-.env.* files are ignored by Git meaning anyone who clones this project won’t have access to the required environment variables. Please follow these steps to set up your environment variables:
+You can access the hosted version of this API here: https://nc-news-ysld.onrender.com/api
 
-### Step 1: Create the .env Files
+This link will also direct you to a full list of available endpoints and how to use them.
+
 ---
 
-Two .env files need to be created in the root of the project:
+## Project Overview
 
-* *.env.development* (this is for the development database)
+NC News is a RESTful API that serves news-related data, including articles, topics, users and comments. Users can interact with the API by retrieving articles, posting and deleting comments and voting on articles. This project is built using **Node.js, Express and PostgreSQL**.
 
-* *.env.test* (this is for the test database)
-
-
-### Step 2: Add the Required Variables
 ---
 
-Each .env file should contain the following environment variable:
+## Getting started:
 
+To get started with this project locally, please follow the instructions below.
 
-The name of the development database in *.env.development*: 
-```bash
+### 1. Clone the Repository
+
+```sh[
+git clone https://github.com/MuseOfCode/nc-news-app.git
+cd nc-news
+```
+
+### 2. Install Dependencies
+
+```sh
+npm install
+```
+
+### 3. Set Up Environment Variables
+
+The project requires two `.env` files to be created in the root directory:
+
+#### `.env.development` (For Development Database)
+```sh
 PGDATABASE=nc_news
 ```
 
-The name of your test database in *.env.test*: 
-
-```bash
+#### `.env.test` (For Test Database)
+```sh
 PGDATABASE=nc_news_test
 ```
 
+**Please note:** `.env` files are ignored by Git meaning that they must be created manually.
 
-### Step 3: Verify Your Setup
----
+### 4. Set Up and Seed the Local Database
 
-To confirm that your environment variables are set up as they should be, please run in your terminal:
+Ensure you have **PostgreSQL installed and running**. Then, run the following commands to create and seed your databases:
 
-```bash
-npm run test-seed
+```sh
+npm run setup-dbs   # This creates the databases
+npm run seed-dev    # This seeds the development database
 ```
 
+### 5. Run Tests
 
-If the connection is successful, you should see logs confirming connection to the correct database!
+To verify everything is set up correctly, run the test suite:
+
+```sh
+npm run test
+```
+
+### 6. Start the Server Locally
+
+To start the server locally, run:
+
+```sh
+npm start
+```
+
+The server should now be running on: [http://localhost:9090](http://localhost:9090).
+
+---
+
+## Production Environment Setup
+
+For production deployment, a `.env.production` file is needed with the following format:
+
+```sh
+DATABASE_URL=your-production-database-url
+```
+
+After setting up the production database, seed it using:
+
+```sh
+npm run seed-prod
+```
+
+---
+
+## Minimum Requirements
+
+- **Node.js:** v16+
+- **PostgreSQL:** v12+
+
+---
 
 
