@@ -5,10 +5,6 @@ const data = require("../db/data/test-data");
 const seed = require("../db/seeds/seed");
 const db = require("../db/connection");
 const { toBeSortedBy } = require("jest-sorted");
-const {
-  getArticlesWithoutComments,
-  deleteAllUsers,
-} = require("../db/queries/test.queries");
 
 beforeAll(() => {
   return seed(data).then(() => {
@@ -146,19 +142,21 @@ describe("GET /api/articles", () => {
 describe("GET /api/articles/:article_id", () => {
   test("Status: 200, Responds with one article object based on article_id", () => {
     return request(app)
-      .get("/api/articles/4")
+      .get("/api/articles/3")
       .expect(200)
       .then(({ body }) => {
-        console.log(body);
+        console.log("past:", body.article.comment_count);
+        // console.log(body);
         expect(body.article).toEqual(
           expect.objectContaining({
-            article_id: 4,
+            article_id: 3,
             author: expect.any(String),
             title: expect.any(String),
             topic: expect.any(String),
             created_at: expect.any(String),
             votes: expect.any(Number),
             article_img_url: expect.any(String),
+            comment_count: expect.any(Number),
           })
         );
       });
@@ -189,6 +187,7 @@ describe("GET /api/articles/:article_id/comments", () => {
       .get("/api/articles/3/comments")
       .expect(200)
       .then(({ body }) => {
+        //check length of array
         expect(Array.isArray(body.comments)).toBe(true);
         body.comments.forEach((comment) => {
           expect(comment).toEqual(
@@ -632,16 +631,17 @@ describe("PATCH /api/articles/:article_id comment_count tests", () => {
       });
   });
 
-  test.skip("Status: 200, Successfully decrements the comment_count when a comment is deleted", () => {
+  test("Status: 200, Successfully decrements the comment_count when a comment is deleted", () => {
     return request(app)
-      .delete("/api/comments/1")
+      .delete("/api/comments/5")
       .expect(204)
       .then(() => {
         return request(app)
-          .get("/api/articles/3")
+          .get("/api/articles/1")
           .expect(200)
           .then(({ body }) => {
-            expect(body.article.comment_count).toBe(11);
+            console.log("updated count:", body.article.comment_count);
+            expect(body.article.comment_count).toBe(9);
           });
       });
   });
