@@ -7,6 +7,7 @@ app.use(express.json());
 app.use("/api", apiRouter);
 
 app.all("/*", (req, res, next) => {
+  console.log(res.body);
   res.status(404).send({ msg: "Endpoint not found" });
 });
 
