@@ -388,7 +388,7 @@ describe("PATCH /api/articles/:article_id, update votes on article by article_id
 
 describe("DELETE /api/comments/:comment_id", () => {
   test("Status: 204, Successfully deletes a comment", () => {
-    return request(app).delete("/api/comments/1").expect(204);
+    return request(app).delete("/api/comments/7").expect(204);
   });
 
   test("Status: 404, Responds with error if comment not found", () => {
@@ -641,7 +641,7 @@ describe("PATCH /api/articles/:article_id comment_count tests", () => {
           .expect(200)
           .then(({ body }) => {
             console.log("updated count:", body.article.comment_count);
-            expect(body.article.comment_count).toBe(9);
+            expect(body.article.comment_count).toBe(8);
           });
       });
   });
@@ -670,6 +670,76 @@ describe("GET /api/users/:username - Get user by username", () => {
       .expect(404)
       .then(({ body }) => {
         expect(body.msg).toBe("User not found");
+      });
+  });
+});
+
+describe("PATCH /api/comments/:comment_id", () => {
+  test.each([
+    ["increased comment votes", 17, { inc_votes: 1 }, 21],
+    ["decreased comment votes", 1, { inc_votes: -1 }, 15],
+    // ["unchanged comment if inc_votes is 0", 1, { inc_votes: 0 }, 15],
+  ])(
+    "Status 200: Responds with updated comment object with correct properties with %s",
+    (_, commentId, requestBody, expectedVotes) => {
+      return request(app)
+        .patch(`/api/comments/${commentId}`)
+        .send(requestBody)
+        .expect(200)
+        .then(({ body }) => {
+          expect(body.comment).toEqual(
+            expect.objectContaining({
+              comment_id: commentId,
+              article_id: 9,
+              author: expect.any(String),
+              body: expect.any(String),
+              votes: expectedVotes,
+              created_at: expect.any(String),
+            })
+          );
+        });
+    }
+  );
+  test.each([
+    [
+      "inc_votes is missing from request body",
+      {},
+      "Bad request: Invalid Input.",
+    ],
+    ["inc_votes is null", { inc_votes: null }, "Bad request: Invalid Input."],
+    [
+      "Bad request: Invalid Input.",
+      { inc_votes: "string" },
+      "Bad request: Invalid Input.",
+    ],
+  ])(
+    "Status: 400, Responds with appropriate error message when %s",
+    (_, requestBody, expectedMsg) => {
+      return request(app)
+        .patch("/api/comments/9")
+        .send(requestBody)
+        .expect(400)
+        .then(({ body }) => {
+          expect(body.msg).toBe(expectedMsg);
+        });
+    }
+  );
+  test("400: responds with error if comment_id does not exist", () => {
+    return request(app)
+      .patch("/api/comments/invalid_commentId")
+      .send({ inc_votes: 5 })
+      .expect(400)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Bad request: Invalid Input.");
+      });
+  });
+  test("404: responds with error if comment_id does not exist", () => {
+    return request(app)
+      .patch("/api/comments/999")
+      .send({ inc_votes: 5 })
+      .expect(404)
+      .then(({ body }) => {
+        expect(body.msg).toBe("Comment not found.");
       });
   });
 });
