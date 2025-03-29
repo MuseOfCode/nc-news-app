@@ -116,6 +116,27 @@
       }
     }
   },
+  "PATCH /api/comments/:comment_id": {
+    "description": "Updates the votes for a given comment ID.",
+    "queries": [],
+    "requestBody": {
+      "inc_votes": "Number (required)"
+    },
+    "exampleRequestBody": {
+      "inc_votes": 1
+    },
+    "exampleResponse": {
+      "comment": {
+        "comment_id": 1,
+        "author": "butter_bridge",
+        "body": "Oh, I've got compassion running out of my nose, pal! I'm the Sultan of Sentiment!",
+        "votes": 17,
+        "created_at": 1586179020000,
+        "article_title": "They're not exactly dogs, are they?",
+        "article_id": 3
+      }
+    }
+  },
   "DELETE /api/comments/:comment_id": {
     "description": "Deletes a comment by its ID. If the comment exists, it is removed and the response status is 204 (No Content). If the comment does not exist, responds with a 404 error.",
     "queries": [],

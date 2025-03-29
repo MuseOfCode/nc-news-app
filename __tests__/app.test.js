@@ -678,7 +678,7 @@ describe("PATCH /api/comments/:comment_id", () => {
   test.each([
     ["increased comment votes", 17, { inc_votes: 1 }, 21],
     ["decreased comment votes", 1, { inc_votes: -1 }, 15],
-    // ["unchanged comment if inc_votes is 0", 1, { inc_votes: 0 }, 15],
+    ["unchanged comment if inc_votes is 0", 1, { inc_votes: 0 }, 15],
   ])(
     "Status 200: Responds with updated comment object with correct properties with %s",
     (_, commentId, requestBody, expectedVotes) => {

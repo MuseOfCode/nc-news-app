@@ -49,7 +49,6 @@ exports.updateCommentVotes = (req, res, next) => {
     });
   }
 
-  console.log("Controller - comment_id:", comment_id, "inc_votes:", inc_votes);
   updateVotesInComment(comment_id, inc_votes)
     .then((comment) => {
       res.status(200).send({ comment: comment });
