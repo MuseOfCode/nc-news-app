@@ -78,6 +78,7 @@ exports.fetchArticleById = (article_id) => {
       a.created_at,
       a.votes,
       a.article_img_url,
+      a.body,
       COUNT(c.comment_id)::INT AS comment_count
     FROM articles AS a
     LEFT JOIN comments c

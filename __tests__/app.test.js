@@ -157,6 +157,7 @@ describe("GET /api/articles/:article_id", () => {
             votes: expect.any(Number),
             article_img_url: expect.any(String),
             comment_count: expect.any(Number),
+            body: expect.any(String),
           })
         );
       });
